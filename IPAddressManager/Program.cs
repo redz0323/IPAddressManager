@@ -7,6 +7,9 @@ string subnet = "192.168.1";
 //SequentialPing();
 ParallelPing();
 
+/// <summary>
+/// Pings a range of IP Addresses in a sequentially.
+/// </summary>
 void SequentialPing()
 {
     Console.WriteLine("==================== Synchronous Ping ====================");
@@ -22,6 +25,9 @@ void SequentialPing()
     Console.WriteLine($"Synchorous Ping took : {timeTaken} to finish pinging {noOfIpAddresses - 1} IP Addresses.");
 }
 
+/// <summary>
+/// Pings a range of IP Addresses in Parallel.
+/// </summary>
 void ParallelPing()
 {
     Console.WriteLine("==================== Asynchronous Ping ====================");
@@ -35,6 +41,9 @@ void ParallelPing()
     Console.WriteLine($"Asynchorous Ping took : {timeTaken} to finish pinging {noOfIpAddresses - 1} IP Addresses.");
 }
 
+/// <summary>
+/// Ping IP Address
+/// </summary>
 void PingIPAddress(string ip)
 {
     Ping ping = new Ping();
