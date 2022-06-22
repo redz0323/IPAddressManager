@@ -15,7 +15,18 @@ namespace IPAddressManager.Utilities
             var uri = new Uri("https://api.macvendors.com/" + WebUtility.UrlEncode(macAddress));
             using (var wc = new HttpClient())
             {
+                Task.Delay(5000);
                 return Task.Run(async() => await wc.GetStringAsync(uri)).Result;
+            }
+        }
+
+        public static async Task<string> GetManufacturerAsync(string macAddress)
+        {
+            var uri = new Uri("https://api.macvendors.com/" + WebUtility.UrlEncode(macAddress));
+            using (var wc = new HttpClient())
+            {
+                await Task.Delay(5000);
+                return await wc.GetStringAsync(uri);
             }
         }
 
