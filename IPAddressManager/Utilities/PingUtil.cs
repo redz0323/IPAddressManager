@@ -17,71 +17,41 @@ namespace IPAddressManager.Utilities
 
             Stopwatch stopWatch = new();
             stopWatch.Start();
-            for (int i = 1; i < 255; i++)
-                PingIPAddress($"{subnet}.{i}");
+            for (int i = 1; i < noOfIpAddresses; i++)
+                Ping($"{subnet}.{i}");
 
             stopWatch.Stop();
             string timeTaken = stopWatch.Elapsed.Duration().ToString();
             Console.WriteLine($"Synchorous Ping took : {timeTaken} to finish pinging {noOfIpAddresses - 1} IP Addresses.");
         }
 
-        /// <summary>
-        /// Pings a range of IP Addresses in Parallel.
-        /// </summary>
-        public static void ParallelPing(string subnet, int noOfIpAddresses = 255)
+        public static NetworkDetail Ping(string ip)
         {
-            Console.WriteLine("==================== Asynchronous Ping ====================");
-
-            Stopwatch stopWatch = new();
-            stopWatch.Start();
-            Parallel.For(1, noOfIpAddresses,  async i => { await PingIPAddress($"{subnet}.{i}"); });
-            stopWatch.Stop();
-            string timeTaken = stopWatch.Elapsed.Duration().ToString();
-            Console.WriteLine($"Asynchorous Ping took : {timeTaken} to finish pinging {noOfIpAddresses - 1} IP Addresses.");
-        }
-
-        public async static Task PingIPAddress(string ip)
-        {
-            await Task.Run(() =>
+            int currentCore = Thread.GetCurrentProcessorId();
+            NetworkDetail networkDetail = new(ip);
+            Ping ping = new();
+            PingReply pingReply = ping.Send(ip, 10000);
+            try
             {
-                Ping ping = new();
-                PingReply reply = ping.Send(ip, 100);
-
-                int currentCore = Thread.GetCurrentProcessorId();
-                try
+                IPHostEntry host = Dns.GetHostEntry(IPAddress.Parse(ip));
+                if (host != null)
                 {
-                    IPHostEntry host = Dns.GetHostEntry(IPAddress.Parse(ip));
-                    if (host != null)
-                    {
-                        string status = reply.Status == IPStatus.Success ? "UP" : "DOWN";
-                        Console.WriteLine("=========================");
-                        Console.WriteLine($"IP Address: {ip}");
-                        Console.WriteLine($"Status: {status}");
-                        if (reply.Status == IPStatus.Success)
-                        {
-                            Console.WriteLine($"Host Name: {host.HostName}");
-                            string macAddress = MacUtil.GetMacAddress(ip);
-                            Console.WriteLine($"Mac Address: {macAddress}");
-                            string manufacturer = MacUtil.GetManufacturer(macAddress);
-                            Console.WriteLine($"Manufacturer: {manufacturer}");
-                        }
-                        Console.WriteLine($"Proccessed on Thread #{currentCore}");
-                    }
+                    bool hasReply = pingReply.Status == IPStatus.Success;
+                    networkDetail.Status = hasReply ? Status.Up : Status.Down;
                 }
-                catch (SocketException)
-                {
-                    Console.WriteLine("=========================");
-                    Console.WriteLine($"IP Address: {ip}");
-                    Console.WriteLine($"Status: VACANT");
-                    Console.WriteLine($"Proccessed on Thread #{currentCore}");
-                }
-            });
+            }
+            catch (SocketException)
+            {
+                networkDetail.Status = Status.Vacant;
+            }
+            Console.WriteLine($"IP Address: {networkDetail.IPAddress}; Status: {networkDetail.Status}; Processed on Thread #{currentCore}.");
+            return networkDetail;
         }
 
-        public static async Task<NetworkDetail> GetNetworkDetail(string ip)
+        public static async Task<NetworkDetail> PingAsync(string ip)
         {
-            NetworkDetail networkDetail = new NetworkDetail();
-            networkDetail.IPAddress = ip;
+            int currentCore = Thread.GetCurrentProcessorId();
+            NetworkDetail networkDetail = new(ip);
 
             Ping ping = new();
             PingReply pingReply = await ping.SendPingAsync(ip, 10000);
@@ -93,11 +63,6 @@ namespace IPAddressManager.Utilities
                 {
                     bool hasReply = pingReply.Status == IPStatus.Success;
                     networkDetail.Status = hasReply ? Status.Up : Status.Down;
-                    if (hasReply)
-                    {
-                        networkDetail.MacAddress = MacUtil.GetMacAddress(ip);
-                        networkDetail.Manufacturer = await MacUtil.GetManufacturerAsync(networkDetail.MacAddress);
-                    }
                 }
             }
             catch (SocketException)
@@ -105,11 +70,7 @@ namespace IPAddressManager.Utilities
                 networkDetail.Status = Status.Vacant;
             }
 
-            Console.WriteLine("=========================================");
-            Console.WriteLine($"IP Address: {networkDetail.IPAddress}");
-            Console.WriteLine($"Computer Name: {networkDetail.Name}");
-            Console.WriteLine($"Mac Address: {networkDetail.MacAddress}");
-            Console.WriteLine($"Status: {networkDetail.Status}");
+            Console.WriteLine($"IP Address: {networkDetail.IPAddress}; Status: {networkDetail.Status}; Processed on Thread #{currentCore}.");
             return networkDetail;
         }
 
@@ -117,7 +78,7 @@ namespace IPAddressManager.Utilities
         /// <summary>
         /// Pings a range of IP Addresses in Parallel.
         /// </summary>
-        public static void ParallelPingAsync(string subnet, int noOfIpAddresses = 255)
+        public static void ParallelPing(string subnet, int noOfIpAddresses = 255)
         {
             Console.WriteLine("==================== Asynchronous Ping ====================");
 
@@ -125,7 +86,7 @@ namespace IPAddressManager.Utilities
             stopWatch.Start();
             List<Task> tasks = new();
 
-            Parallel.For(1, noOfIpAddresses, i => { tasks.Add(GetNetworkDetail($"{subnet}.{i}")); });
+            Parallel.For(1, noOfIpAddresses, i => { tasks.Add(PingAsync($"{subnet}.{i}")); });
 
             Task.WaitAll(tasks.ToArray());
 

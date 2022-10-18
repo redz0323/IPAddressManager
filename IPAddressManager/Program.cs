@@ -1,3 +1,4 @@
 ﻿using IPAddressManager.Utilities;
 
-PingUtil.ParallelPingAsync("192.168.0");
+PingUtil.ParallelPing("192.168.0");
+//PingUtil.SequentialPing("192.168.0", 10);

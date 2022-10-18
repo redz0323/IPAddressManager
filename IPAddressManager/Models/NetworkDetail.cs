@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace IPAddressManager.Models
+﻿namespace IPAddressManager.Models
 {
     internal class NetworkDetail
     {
@@ -13,5 +7,10 @@ namespace IPAddressManager.Models
         public string? MacAddress { get; set; }
         public string? Manufacturer { get; set; }
         public Status Status { get; set; }
+
+        internal NetworkDetail(string ipAddress)
+        {
+            this.IPAddress = ipAddress;
+        }
     }
 }
